@@ -1,97 +1,205 @@
-"""HOME RUN - configuration du jeu."""
+"""HOME RUN — slot 5x3, 20 lignes, max win 25000x, wilds multiplicateurs."""
 
+import os
 from src.config.config import Config
 from src.config.distributions import Distribution
-from src.config.config import BetMode
-
-
-TARGETS_OFF = [1.40, 1.50, 1.60, 1.70, 1.80, 1.90, 2.00, 2.20, 2.50, 3.00,
-               3.50, 4.00, 5.00, 6.00, 7.00, 8.00, 10.00, 12.00, 15.00,
-               20.00, 25.00, 30.00, 35.00]
-
-TARGETS_50 = [3.00, 4.00, 5.00, 6.00, 8.00, 10.00, 12.00, 15.00, 20.00,
-              25.00, 30.00, 40.00, 50.00, 75.00, 100.00, 150.00, 200.00,
-              250.00, 500.00, 750.00, 1000.00, 1500.00, 2000.00, 2500.00,
-              5000.00, 7500.00, 10000.00]
-
-TARGETS_90 = [1000.00, 1500.00, 2000.00, 2500.00, 5000.00, 7500.00,
-              10000.00, 15000.00, 20000.00, 25000.00, 50000.00, 75000.00,
-              100000.00, 150000.00, 200000.00, 250000.00]
+from src.config.betmode import BetMode
 
 
 class GameConfig(Config):
-    """Configuration HOME RUN."""
+    """Configuration HOME RUN (machine à sous)."""
+
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(self):
         super().__init__()
         self.game_id = "home-run"
-        self.provider_numer = 0
-        self.working_name = "home-run"
-        self.wincap = 25000
-        self.win_type = "other"
-        self.rtp = 0.965
+        self.provider_number = 0
+        self.working_name = "Home Run"
+        self.wincap = 25000.0
+        self.win_type = "lines"
+        self.rtp = 0.9600
+        self.construct_paths()
 
-        self.num_reels = 0
-        self.num_rows = [0] * self.num_reels
-        self.paytable = {}
-        self.include_padding = False
-        self.special_symbols = {"wild": [], "scatter": [], "multiplier": []}
+        self.num_reels = 5
+        self.num_rows = [3] * self.num_reels
 
-        self.freespin_triggers = {self.basegame_type: {}, self.freegame_type: {}}
-        self.anticipation_triggers = {self.basegame_type: 0, self.freegame_type: 0}
+        # Wild ne paie qu'en 5 identiques (évite le conflit 3W vs 5-low du SDK).
+        self.paytable = {
+            (5, "W"): 50,
+            (5, "H1"): 50,
+            (4, "H1"): 20,
+            (3, "H1"): 10,
+            (5, "H2"): 25,
+            (4, "H2"): 10,
+            (3, "H2"): 5,
+            (5, "H3"): 15,
+            (4, "H3"): 8,
+            (3, "H3"): 3,
+            (5, "H4"): 10,
+            (4, "H4"): 5,
+            (3, "H4"): 2,
+            (5, "H5"): 8,
+            (4, "H5"): 3,
+            (3, "H5"): 1,
+            (5, "L1"): 5,
+            (4, "L1"): 1,
+            (3, "L1"): 0.5,
+            (5, "L2"): 3,
+            (4, "L2"): 0.8,
+            (3, "L2"): 0.3,
+            (5, "L3"): 2,
+            (4, "L3"): 0.6,
+            (3, "L3"): 0.2,
+            (5, "L4"): 2,
+            (4, "L4"): 0.5,
+            (3, "L4"): 0.2,
+            (5, "L5"): 1,
+            (4, "L5"): 0.3,
+            (3, "L5"): 0.1,
+        }
 
-        self.bet_modes = []
-        self.bet_modes += self._build_modes(TARGETS_OFF, secure=0.0)
-        self.bet_modes += self._build_modes(TARGETS_50, secure=0.5)
-        self.bet_modes += self._build_modes(TARGETS_90, secure=0.9)
-        # Mode bidon pour le SDK (il cherche toujours "base")
-        self.bet_modes.append(
+        self.paylines = {
+            1: [1, 1, 1, 1, 1],
+            2: [0, 0, 0, 0, 0],
+            3: [2, 2, 2, 2, 2],
+            4: [0, 1, 2, 1, 0],
+            5: [2, 1, 0, 1, 2],
+            6: [0, 0, 1, 2, 2],
+            7: [2, 2, 1, 0, 0],
+            8: [1, 2, 2, 2, 1],
+            9: [1, 0, 0, 0, 1],
+            10: [0, 1, 1, 1, 0],
+            11: [2, 1, 1, 1, 2],
+            12: [1, 2, 1, 0, 1],
+            13: [1, 0, 1, 2, 1],
+            14: [0, 1, 0, 1, 0],
+            15: [2, 1, 2, 1, 2],
+            16: [1, 1, 0, 1, 1],
+            17: [1, 1, 2, 1, 1],
+            18: [0, 2, 0, 2, 0],
+            19: [2, 0, 2, 0, 2],
+            20: [0, 2, 1, 0, 2],
+        }
+
+        self.include_padding = True
+        self.special_symbols = {"wild": ["W"], "scatter": ["S"], "multiplier": ["W"]}
+
+        self.freespin_triggers = {
+            self.basegame_type: {3: 10, 4: 12, 5: 15},
+            self.freegame_type: {2: 3, 3: 5, 4: 8, 5: 12},
+        }
+        self.anticipation_triggers = {
+            self.basegame_type: min(self.freespin_triggers[self.basegame_type].keys()) - 1,
+            self.freegame_type: min(self.freespin_triggers[self.freegame_type].keys()) - 1,
+        }
+
+        reels = {"BR0": "BR0.csv", "FR0": "FR0.csv", "WCAP": "FRWCAP.csv"}
+        self.reels = {}
+        for r, f in reels.items():
+            self.reels[r] = self.read_reels_csv(os.path.join(self.reels_path, f))
+
+        self.padding_reels[self.basegame_type] = self.reels["BR0"]
+        self.padding_reels[self.freegame_type] = self.reels["FR0"]
+        self.padding_symbol_values = {
+            "W": {"multiplier": {2: 100, 3: 50, 4: 40, 5: 30, 10: 20, 20: 10, 50: 5, 100: 2}}
+        }
+
+        # Multis des wilds : 1x en base, 2x–100x en bonus (cap 25000x).
+        freegame_condition = {
+            "reel_weights": {
+                self.basegame_type: {"BR0": 1},
+                self.freegame_type: {"FR0": 1},
+            },
+            "scatter_triggers": {3: 50, 4: 20, 5: 5},
+            "mult_values": {
+                self.basegame_type: {1: 1},
+                self.freegame_type: {
+                    2: 50,
+                    3: 70,
+                    4: 40,
+                    5: 25,
+                    10: 15,
+                    20: 10,
+                    50: 6,
+                    100: 2,
+                },
+            },
+            "force_wincap": False,
+            "force_freegame": True,
+        }
+
+        basegame_condition = {
+            "reel_weights": {self.basegame_type: {"BR0": 1}},
+            "mult_values": {self.basegame_type: {1: 1}},
+            "force_wincap": False,
+            "force_freegame": False,
+        }
+
+        wincap_condition = {
+            "reel_weights": {
+                self.basegame_type: {"BR0": 1},
+                self.freegame_type: {"FR0": 1, "WCAP": 5},
+            },
+            "mult_values": {
+                self.basegame_type: {1: 1},
+                self.freegame_type: {10: 10, 20: 20, 50: 40, 100: 80},
+            },
+            "scatter_triggers": {4: 1, 5: 2},
+            "force_wincap": True,
+            "force_freegame": True,
+        }
+
+        zerowin_condition = {
+            "reel_weights": {self.basegame_type: {"BR0": 1}},
+            "mult_values": {self.basegame_type: {1: 1}},
+            "force_wincap": False,
+            "force_freegame": False,
+        }
+
+        mode_maxwins = {"base": 25000, "bonus": 25000}
+        self.bet_modes = [
             BetMode(
                 name="base",
                 cost=1.0,
                 rtp=self.rtp,
-                max_win=self.wincap,
+                max_win=mode_maxwins["base"],
                 auto_close_disabled=False,
-                is_feature=False,
+                is_feature=True,
                 is_buybonus=False,
                 distributions=[
                     Distribution(
-                        criteria="basegame",
-                        quota=1.0,
-                        conditions={
-                            "reel_weights": {},
-                            "force_wincap": False,
-                            "force_freegame": False,
-                        },
+                        criteria="wincap",
+                        quota=0.001,
+                        win_criteria=mode_maxwins["base"],
+                        conditions=wincap_condition,
                     ),
+                    Distribution(criteria="freegame", quota=0.1, conditions=freegame_condition),
+                    Distribution(criteria="0", quota=0.4, win_criteria=0.0, conditions=zerowin_condition),
+                    Distribution(criteria="basegame", quota=0.5, conditions=basegame_condition),
                 ],
-            )
-        )
-
-    def _build_modes(self, targets, secure):
-        modes = []
-        for target in targets:
-            mode_name = f"t{int(round(target * 100))}_s{int(secure * 100)}"
-            modes.append(
-                BetMode(
-                    name=mode_name,
-                    cost=1.0,
-                    rtp=self.rtp,
-                    max_win=self.wincap,
-                    auto_close_disabled=False,
-                    is_feature=False,
-                    is_buybonus=False,
-                    distributions=[
-                        Distribution(
-                            criteria="basegame",
-                            quota=1.0,
-                            conditions={
-                                "reel_weights": {},
-                                "force_wincap": False,
-                                "force_freegame": False,
-                            },
-                        ),
-                    ],
-                )
-            )
-        return modes
+            ),
+            BetMode(
+                name="bonus",
+                cost=100.0,
+                rtp=self.rtp,
+                max_win=mode_maxwins["bonus"],
+                auto_close_disabled=False,
+                is_feature=False,
+                is_buybonus=True,
+                distributions=[
+                    Distribution(
+                        criteria="wincap",
+                        quota=0.001,
+                        win_criteria=mode_maxwins["bonus"],
+                        conditions=wincap_condition,
+                    ),
+                    Distribution(criteria="freegame", quota=0.999, conditions=freegame_condition),
+                ],
+            ),
+        ]

@@ -1,0 +1,30 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="stakeengine" />
+          <option value="boto3" />
+          <option value="botocore" />
+          <option value="iniconfig" />
+          <option value="jmespath" />
+          <option value="numpy" />
+          <option value="packaging" />
+          <option value="pluggy" />
+          <option value="pytest" />
+          <option value="python-dateutil" />
+          <option value="python-dotenv" />
+          <option value="s3transfer" />
+          <option value="setuptools" />
+          <option value="six" />
+          <option value="urllib3" />
+          <option value="xlsxwriter" />
+          <option value="zstandard" />
+          <option value="toml" />
+          <option value="matplotlib" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

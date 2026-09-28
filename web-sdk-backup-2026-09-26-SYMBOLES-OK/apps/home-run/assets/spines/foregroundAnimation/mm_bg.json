@@ -1,0 +1,34 @@
+{
+"skeleton": {
+"hash": "mm_bg",
+"spine": "4.2.0",
+"x": 0,
+"y": 0,
+"width": 1376,
+"height": 768
+},
+"bones": [
+{ "name": "root" }
+],
+"slots": [
+{ "name": "background", "bone": "root", "attachment": "background" }
+],
+"skins": [
+{
+"name": "default",
+"attachments": {
+"background": {
+"background": {
+"x": 0,
+"y": 0,
+"width": 1376,
+"height": 768
+}
+}
+}
+}
+],
+"animations": {
+"animation": {}
+}
+}
