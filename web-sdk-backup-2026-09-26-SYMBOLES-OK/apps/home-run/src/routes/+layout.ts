@@ -1,8 +1,7 @@
 // if you want to generate a static html file
 // for your page.
 // Documentation: https://kit.svelte.dev/docs/page-options#prerender
-// false: wallet mock API (+server.ts) must work in local offline play
-export const prerender = false;
+export const prerender = true;
 
 // if you want to Generate a SPA
 // you have to set ssr to false.

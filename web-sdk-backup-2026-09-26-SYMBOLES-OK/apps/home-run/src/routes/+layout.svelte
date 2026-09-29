@@ -13,13 +13,16 @@
 	const props: Props = $props();
 
 	let showYourLoader = $state(false);
-	let offlineReady = $state(false);
+	// Prod/Studio: always mount. Dev offline: wait until sessionID+rgs_url are present.
+	let appReady = $state(!browser || !import.meta.env.DEV);
 
 	const loaderUrlStakeEngine = new URL('../../stake-engine-loader.gif', import.meta.url).href;
 	const loaderUrl = new URL('../../loader.gif', import.meta.url).href;
 
-	// Mode offline local : sessionID + rgs_url pointent vers ce serveur Vite.
-	if (browser) {
+	// DEV only: inject mock session so local `vite dev` works without Studio params.
+	// Never do this in production — Studio provides sessionID/rgs_url; injecting
+	// offline + CDN host causes a blank screen / auth failure.
+	if (browser && import.meta.env.DEV) {
 		const params = new URLSearchParams(window.location.search);
 		const needsSession = !params.get('sessionID');
 		const needsRgs = !params.get('rgs_url');
@@ -28,14 +31,14 @@
 			if (needsRgs) params.set('rgs_url', window.location.host);
 			window.location.replace(`${window.location.pathname}?${params.toString()}`);
 		} else {
-			offlineReady = true;
+			appReady = true;
 		}
 	}
 
 	setContext();
 </script>
 
-{#if offlineReady}
+{#if appReady}
 	<GlobalStyle>
 		<Authenticate>
 			<LoadI18n {messagesMap}>
