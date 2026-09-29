@@ -79,9 +79,13 @@ export const stateGame = $state({
 	scatterCounter: 0,
 });
 
+// Same board height in base & bonus; freegame night BG needs a lower lift
+// so feet/board sit like on the spin page relative to the field.
+const boardYLift = () => (stateGame.gameType === 'freegame' ? 25 : 75);
+
 const boardLayout = () => ({
 	x: stateLayoutDerived.mainLayout().width * 0.5,
-	y: stateLayoutDerived.mainLayout().height * 0.5,
+	y: stateLayoutDerived.mainLayout().height * 0.5 - boardYLift(),
 	anchor: { x: 0.5, y: 0.5 },
 	pivot: { x: BOARD_SIZES.width / 2, y: BOARD_SIZES.height / 2 },
 	...BOARD_SIZES,

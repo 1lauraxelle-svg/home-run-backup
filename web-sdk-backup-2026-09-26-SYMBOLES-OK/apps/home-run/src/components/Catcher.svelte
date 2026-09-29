@@ -28,7 +28,8 @@
 	const catcherW = $derived(catcherH * 0.72);
 	// Left of frame (mirror of batter)
 	const baseX = $derived(board.x - board.width * 0.5 - catcherW * 0.35 - SYMBOL_SIZE * 0.15);
-	const baseY = $derived(board.y + board.height * 0.36);
+	// Feet on the white chalk marks near home plate
+	const baseY = $derived(board.y + board.height * 0.55);
 
 	const spriteKey = $derived(pose === 'catch' ? 'catcherCatch' : 'catcherIdle');
 
@@ -115,7 +116,7 @@
 <Container x={baseX} y={baseY} zIndex={2} scale={catcherScale} rotation={catcherRot}>
 	<Sprite
 		key={spriteKey}
-		anchor={{ x: 0.5, y: 0.55 }}
+		anchor={{ x: 0.5, y: 0.92 }}
 		width={catcherW}
 		height={catcherH}
 	/>

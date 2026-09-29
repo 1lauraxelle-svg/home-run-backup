@@ -1,9 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	import { getContextLayout } from 'utils-layout';
-	import { resizeObserver, type ContentRect } from 'utils-resize-observer';
-
 	import BaseContent from './BaseContent.svelte';
 	import BaseScrollable from './BaseScrollable.svelte';
 
@@ -14,82 +11,67 @@
 		bonusCardsBuy: Snippet;
 	};
 
+	// maxListLength kept for ModalBuyBonus API compatibility
 	const props: Props = $props();
-
-	const { stateLayoutDerived } = getContextLayout();
-
-	let contentRect = $state({ width: 0, height: 0, left: 0, top: 0 } as ContentRect);
-
-	const horizontalScale = $derived(
-		stateLayoutDerived.canvasSizes().width / (240 * (props.maxListLength || 1)),
-	); // {maxListLength} columns, 240 is the width benchmark
-	const verticalScale = $derived(
-		(stateLayoutDerived.canvasSizes().height - 250) / (contentRect?.height || 0),
-	);
-	const scale = $derived(Math.min(verticalScale, horizontalScale));
-	const scaled = $derived(scale < 1);
 </script>
 
+<!-- Portrait: stack cards vertically + scroll — avoid crushing 3 columns with scale() -->
 <BaseContent maxWidth="100%">
-	<div class="wrap" class:scaled>
-		<div
-			class="bonuses"
-			style="transform: scale({Math.min(scale, 1)});"
-			use:resizeObserver={(value) => (contentRect = value)}
-		>
-			<BaseScrollable type="row" noScroll>
-				{@render props.bonusCardsActivate()}
-			</BaseScrollable>
-
-			<BaseScrollable type="row" noScroll>
-				{@render props.bonusCardsBuy()}
-			</BaseScrollable>
-		</div>
-
-		{#if !scaled}
-			<div>
-				{@render props.betAmount()}
-			</div>
-		{/if}
+	<div class="amount">
+		{@render props.betAmount()}
 	</div>
 
-	{#if scaled}
-		<div class="badge-amount-wrap-scaled">
-			{@render props.betAmount()}
+	<BaseScrollable type="column">
+		<div class="bonuses-wrap">
+			{@render props.bonusCardsActivate()}
+			{@render props.bonusCardsBuy()}
 		</div>
-	{/if}
+	</BaseScrollable>
 </BaseContent>
 
 <style lang="scss">
-	.wrap {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		transform: translate(-50%, calc(-50%));
-
+	.amount {
 		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-
-		&.scaled {
-			transform: translate(-50%, calc(-50% - 4rem));
-		}
+		justify-content: center;
+		padding: 0.5rem 0 0.25rem;
+		flex-shrink: 0;
 	}
 
-	.bonuses {
+	.bonuses-wrap {
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-
-		transform-origin: center center;
+		align-items: stretch;
+		gap: 0.75rem;
+		width: min(100%, 340px);
+		margin: 0 auto;
+		padding: 0.25rem 0.75rem 1.5rem;
+		box-sizing: border-box;
 	}
 
-	.badge-amount-wrap-scaled {
-		position: fixed;
-		bottom: 0;
-		left: 50%;
-		transform: translate(-50%, -20%);
+	.bonuses-wrap :global(.bonus-card-wrap) {
+		min-width: 0;
+		max-width: none;
+		width: 100%;
+		padding: 0.85rem 1rem;
+		background: rgba(0, 0, 0, 0.72);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+	}
+
+	.bonuses-wrap :global(.title) {
+		font-size: 1.1rem;
+		line-height: 1.2;
+		font-weight: 700;
+	}
+
+	.bonuses-wrap :global(.description) {
+		font-size: 0.85rem;
+		min-height: 0;
+		line-height: 1.25;
+	}
+
+	.bonuses-wrap :global(.price) {
+		font-size: 1.15rem;
+		font-weight: 700;
+		margin-top: 0.25rem;
 	}
 </style>

@@ -8,34 +8,48 @@
 </script>
 
 <script lang="ts">
-	import { Sprite, SpineProvider, SpineTrack, SpineSlot } from 'pixi-svelte';
+	import { Container } from 'pixi-svelte';
 	import { FadeContainer, WinCountUpProvider, ResponsiveBitmapText } from 'components-pixi';
 	import { bookEventAmountToCurrencyString } from 'utils-shared/amount';
-	import { waitForResolve } from 'utils-shared/wait';
-	import { CanvasSizeRectangle } from 'components-layout';
+	import { waitForResolve, waitForTimeout } from 'utils-shared/wait';
+	import { CanvasSizeRectangle, MainContainer } from 'components-layout';
 	import { OnMount } from 'components-shared';
-	import { stateUrlDerived } from 'state-shared';
 
 	import { getContext } from '../game/context';
-	import FreeSpinAnimation from './FreeSpinAnimation.svelte';
 	import PressToContinue from './PressToContinue.svelte';
-	import WinCoins from './WinCoins.svelte';
-
-	type AnimationName = 'intro' | 'idle';
+	import BonusScoreboard from './BonusScoreboard.svelte';
+	import MaxWinBanner from './MaxWinBanner.svelte';
 
 	const context = getContext();
 
-	let show = $state(true);
-	let animationName = $state<AnimationName>('intro');
+	let show = $state(false);
 	let amount = $state(0);
 	let winLevelData = $state<WinLevelData>();
 	let oncomplete = $state(() => {});
-	let onCountUpComplete = $state(() => {});
+	let completed = $state(false);
+	/** After 1st press freezes the amount — wait for 2nd press (no auto-continue). */
+	let amountFrozenByPress = $state(false);
+
+	const finish = () => {
+		if (completed) return;
+		completed = true;
+		oncomplete();
+	};
 
 	context.eventEmitter.subscribeOnMount({
-		freeSpinOutroShow: () => (show = true),
+		freeSpinOutroShow: () => {
+			completed = false;
+			amountFrozenByPress = false;
+			show = true;
+		},
 		freeSpinOutroHide: async () => (show = false),
 		freeSpinOutroCountUp: async (emitterEvent) => {
+			if (!emitterEvent.winLevelData) {
+				amount = emitterEvent.amount;
+				return;
+			}
+			completed = false;
+			amountFrozenByPress = false;
 			amount = emitterEvent.amount;
 			winLevelData = emitterEvent.winLevelData;
 			await waitForResolve((resolve) => (oncomplete = resolve));
@@ -43,68 +57,74 @@
 	});
 </script>
 
-<FadeContainer {show}>
-	{#if winLevelData}
+<FadeContainer persistent {show} duration={100}>
+	{#if winLevelData && show}
 		{@const duration = winLevelData.presentDuration}
+		{@const isMaxWin = winLevelData.alias === 'max'}
 		{@const isBigWin = winLevelData.type === 'big'}
-		<WinCountUpProvider {amount} {duration} oncomplete={() => onCountUpComplete()}>
+		<WinCountUpProvider {amount} {duration} oncomplete={() => {}}>
 			{#snippet children({ countUpAmount, startCountUp, finishCountUp, countUpCompleted })}
-				<OnMount onmount={() => startCountUp()} />
+				<OnMount
+					onmount={async () => {
+						const t0 = performance.now();
+						await startCountUp();
+						if (completed) return;
+						if (amountFrozenByPress) return;
+						const elapsed = performance.now() - t0;
+						const waitMore = Math.max(200, 1000 - elapsed);
+						await waitForTimeout(waitMore);
+						if (completed || amountFrozenByPress) return;
+						finish();
+					}}
+				/>
 
-				<CanvasSizeRectangle backgroundColor={0x000000} backgroundAlpha={0.5} />
+				<CanvasSizeRectangle backgroundColor={0x000000} backgroundAlpha={0.55} eventMode="none" />
 
-				<FreeSpinAnimation>
-					{#snippet children({ sizes })}
-						{#if isBigWin}
-							<Sprite
-								anchor={{ x: 0.5, y: 1.2 }}
-								width={500 * 2.2}
-								height={156 * 2.2}
-								key="freespins_{stateUrlDerived.lang()}.png"
-							/>
-						{:else}
-							<Sprite
-								anchor={{ x: 0.5, y: 1.2 }}
-								width={500 * 4.5}
-								height={80 * 4.5}
-								key="winsmall_{stateUrlDerived.lang()}.png"
-							/>
-						{/if}
+				{#if isMaxWin}
+					<MainContainer>
+						<Container
+							x={context.stateGameDerived.boardLayout().x}
+							y={context.stateGameDerived.boardLayout().y - 320}
+						>
+							<MaxWinBanner {amount} y={0} />
+						</Container>
+					</MainContainer>
+				{/if}
 
-						<SpineProvider key="fsOutroNumber" width={sizes.width * 0.4}>
-							<SpineTrack
-								trackIndex={0}
-								{animationName}
-								loop={animationName === 'idle'}
-								listener={{
-									complete: () => (animationName = 'idle'),
-								}}
-							/>
-							<SpineSlot slotName="slot_number">
-								<ResponsiveBitmapText
-									anchor={0.5}
-									style={{
-										fontFamily: 'gold',
-										fontSize: sizes.width * 0.08,
-									}}
-									text={bookEventAmountToCurrencyString(countUpAmount)}
-									maxWidth={sizes.width}
-								/>
-							</SpineSlot>
-						</SpineProvider>
-
-						<Sprite
-							anchor={{ x: 0.5, y: isBigWin ? -3.2 : -2 }}
-							width={177 * (isBigWin ? 2.2 : 3)}
-							height={42 * (isBigWin ? 2.2 : 3)}
-							key="totalwin.png"
+				<!-- Stadium scoreboard — centered on the slot -->
+				<BonusScoreboard
+					y={0}
+					eyebrow="★ STRIKE ZONE ★"
+					title="FINAL SCORE"
+					subtitle="BONUS COMPLETE"
+					footer="SCORE"
+				>
+					{#snippet center()}
+						<ResponsiveBitmapText
+							anchor={0.5}
+							maxWidth={250}
+							text={bookEventAmountToCurrencyString(countUpAmount)}
+							style={{
+								fontFamily: 'gold',
+								fontSize: isBigWin ? 72 : 64,
+								fontWeight: 'bold',
+								align: 'center',
+							}}
 						/>
 					{/snippet}
-				</FreeSpinAnimation>
+				</BonusScoreboard>
 
-				<WinCoins emit={!countUpCompleted} levelAlias={winLevelData?.alias} />
-
-				<PressToContinue onpress={() => (countUpCompleted ? oncomplete() : finishCountUp())} />
+				<!-- 1st press: freeze amount · 2nd press: continue -->
+				<PressToContinue
+					onpress={() => {
+						if (!countUpCompleted) {
+							amountFrozenByPress = true;
+							finishCountUp();
+						} else {
+							finish();
+						}
+					}}
+				/>
 			{/snippet}
 		</WinCountUpProvider>
 	{/if}

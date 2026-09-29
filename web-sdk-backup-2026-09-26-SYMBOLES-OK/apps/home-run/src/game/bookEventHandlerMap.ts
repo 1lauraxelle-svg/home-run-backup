@@ -115,6 +115,21 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		stateUi.freeSpinCounterCurrent = bookEvent.amount + 1;
 		stateUi.freeSpinCounterTotal = bookEvent.total;
 	},
+	freeSpinRetrigger: async (bookEvent: BookEventOfType<'freeSpinRetrigger'>) => {
+		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_scatter_win_v2' });
+		await animateSymbols({ positions: bookEvent.positions });
+		eventEmitter.broadcast({ type: 'freeSpinCounterShow' });
+		stateUi.freeSpinCounterShow = true;
+		eventEmitter.broadcast({
+			type: 'freeSpinCounterUpdate',
+			current: undefined,
+			total: bookEvent.totalFs,
+		});
+		stateUi.freeSpinCounterTotal = bookEvent.totalFs;
+	},
+	wincap: async (bookEvent: BookEventOfType<'wincap'>) => {
+		stateBet.winBookEventAmount = bookEvent.amount;
+	},
 	freeSpinEnd: async (bookEvent: BookEventOfType<'freeSpinEnd'>) => {
 		const winLevelData = winLevelMap[bookEvent.winLevel as WinLevel];
 
@@ -140,6 +155,11 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 	},
 	setWin: async (bookEvent: BookEventOfType<'setWin'>) => {
 		const winLevelData = winLevelMap[bookEvent.winLevel as WinLevel];
+
+		if (!winLevelData) {
+			stateBet.winBookEventAmount = bookEvent.amount;
+			return;
+		}
 
 		eventEmitter.broadcast({ type: 'winShow' });
 		winLevelSoundsPlay({ winLevelData });

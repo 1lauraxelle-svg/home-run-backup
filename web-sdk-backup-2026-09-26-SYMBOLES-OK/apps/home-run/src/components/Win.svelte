@@ -17,22 +17,45 @@
 
 	import WinCoins from './WinCoins.svelte';
 	import WinAnimation from './WinAnimation.svelte';
+	import MaxWinBanner from './MaxWinBanner.svelte';
 	import PressToContinue from './PressToContinue.svelte';
 	import { SYMBOL_SIZE } from '../game/constants';
 	import { getContext } from '../game/context';
 
 	const context = getContext();
 
+	/** Auto-dismiss only if player never froze the amount (~1s for small wins). */
+	const AUTO_CONTINUE_MS = 1000;
+	const HOLD_AFTER_COUNT_MS = 200;
+
 	let show = $state(false);
 	let amount = $state(0);
 	let winLevelData = $state<WinLevelData>();
 	let oncomplete = $state(() => {});
-	let onCountUpComplete = $state(() => {});
+	let completed = $state(false);
+	/** After 1st press freezes the amount — wait for 2nd press (no auto-continue). */
+	let amountFrozenByPress = $state(false);
+
+	const finish = () => {
+		if (completed) return;
+		completed = true;
+		oncomplete();
+	};
 
 	context.eventEmitter.subscribeOnMount({
-		winShow: () => (show = true),
+		winShow: () => {
+			completed = false;
+			amountFrozenByPress = false;
+			show = true;
+		},
 		winHide: () => (show = false),
 		winUpdate: async (emitterEvent) => {
+			if (!emitterEvent.winLevelData) {
+				amount = emitterEvent.amount;
+				return;
+			}
+			completed = false;
+			amountFrozenByPress = false;
 			amount = emitterEvent.amount;
 			winLevelData = emitterEvent.winLevelData;
 			await waitForResolve((resolve) => (oncomplete = resolve));
@@ -40,65 +63,90 @@
 	});
 </script>
 
-<FadeContainer {show}>
+<!-- persistent: keep children mounted so completion can always run -->
+<FadeContainer persistent {show} duration={120}>
 	{#if winLevelData}
 		{@const isBigWin = winLevelData.type === 'big'}
 		{@const duration = winLevelData.presentDuration}
-		<WinCountUpProvider {amount} {duration} oncomplete={() => onCountUpComplete()}>
+		<WinCountUpProvider {amount} {duration} oncomplete={() => {}}>
 			{#snippet children({ countUpAmount, startCountUp, finishCountUp, countUpCompleted })}
 				{#if isBigWin}
-					<CanvasSizeRectangle backgroundColor={0x000000} backgroundAlpha={0.5} />
+					<CanvasSizeRectangle backgroundColor={0x000000} backgroundAlpha={0.5} eventMode="none" />
 				{/if}
 
-				<OnMount
-					onmount={async () => {
-						await startCountUp();
-						await waitForTimeout(300);
-						oncomplete();
-					}}
-				/>
+				{#if show}
+					<OnMount
+						onmount={async () => {
+							const t0 = performance.now();
+							await startCountUp();
+							if (completed) return;
+							// Player froze the amount — wait for 2nd click
+							if (amountFrozenByPress) return;
+							const elapsed = performance.now() - t0;
+							const waitMore = isBigWin
+								? HOLD_AFTER_COUNT_MS
+								: Math.max(HOLD_AFTER_COUNT_MS, AUTO_CONTINUE_MS - elapsed);
+							await waitForTimeout(waitMore);
+							if (completed || amountFrozenByPress) return;
+							finish();
+						}}
+					/>
 
-				<MainContainer>
-					<Container
-						x={context.stateGameDerived.boardLayout().x}
-						y={context.stateGameDerived.boardLayout().y}
-					>
-						{#if winLevelData?.animation}
-							<WinAnimation animationMap={winLevelData.animation}>
+					<MainContainer>
+						<Container
+							x={context.stateGameDerived.boardLayout().x}
+							y={context.stateGameDerived.boardLayout().y}
+						>
+							{#if winLevelData?.alias === 'max'}
+								<MaxWinBanner {amount} y={-360} />
+							{/if}
+							{#if winLevelData?.animation}
+								<WinAnimation animationMap={winLevelData.animation}>
+									<ResponsiveBitmapText
+										anchor={0.5}
+										maxWidth={2130}
+										text={bookEventAmountToCurrencyString(countUpAmount)}
+										style={{
+											fontFamily: 'gold',
+											fontSize: SYMBOL_SIZE * 3.6,
+											align: 'center',
+											fontWeight: 'bold',
+											letterSpacing: 0,
+										}}
+									/>
+								</WinAnimation>
+							{:else}
 								<ResponsiveBitmapText
 									anchor={0.5}
-									maxWidth={2130}
+									maxWidth={context.stateLayoutDerived.canvasSizes().width /
+										context.stateLayoutDerived.mainLayout().scale}
 									text={bookEventAmountToCurrencyString(countUpAmount)}
 									style={{
 										fontFamily: 'gold',
-										fontSize: SYMBOL_SIZE * 3.6,
+										fontSize: SYMBOL_SIZE,
 										align: 'center',
 										fontWeight: 'bold',
 										letterSpacing: 0,
 									}}
 								/>
-							</WinAnimation>
-						{:else}
-							<ResponsiveBitmapText
-								anchor={0.5}
-								maxWidth={context.stateLayoutDerived.canvasSizes().width /
-									context.stateLayoutDerived.mainLayout().scale}
-								text={bookEventAmountToCurrencyString(countUpAmount)}
-								style={{
-									fontFamily: 'gold',
-									fontSize: SYMBOL_SIZE,
-									align: 'center',
-									fontWeight: 'bold',
-									letterSpacing: 0,
-								}}
-							/>
-						{/if}
-					</Container>
-				</MainContainer>
+							{/if}
+						</Container>
+					</MainContainer>
 
-				<WinCoins emit={!countUpCompleted} levelAlias={winLevelData?.alias} />
+					<WinCoins emit={!countUpCompleted} levelAlias={winLevelData?.alias} />
 
-				<PressToContinue onpress={() => (countUpCompleted ? oncomplete() : finishCountUp())} />
+					<!-- 1st press: freeze amount · 2nd press: continue -->
+					<PressToContinue
+						onpress={() => {
+							if (!countUpCompleted) {
+								amountFrozenByPress = true;
+								finishCountUp();
+							} else {
+								finish();
+							}
+						}}
+					/>
+				{/if}
 			{/snippet}
 		</WinCountUpProvider>
 	{/if}

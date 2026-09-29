@@ -25,7 +25,10 @@ export const POST: RequestHandler = async ({ request }) => {
 			],
 			betModes: {
 				base: { cost: 1, feature: true, buyBonus: false, rtp: 0.96, max_win: 25000 },
-				bonus: { cost: 100, feature: false, buyBonus: true, rtp: 0.96, max_win: 25000 },
+				ante: { cost: 1.25, feature: true, buyBonus: false, rtp: 0.96, max_win: 25000 },
+				bonus_3: { cost: 100, feature: false, buyBonus: true, rtp: 0.96, max_win: 25000 },
+				bonus_4: { cost: 160, feature: false, buyBonus: true, rtp: 0.96, max_win: 25000 },
+				bonus: { cost: 200, feature: false, buyBonus: true, rtp: 0.96, max_win: 25000 },
 			},
 			jurisdiction: {
 				socialCasino: false,

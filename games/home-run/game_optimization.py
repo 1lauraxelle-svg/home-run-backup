@@ -123,4 +123,33 @@ class OptimizationSetup:
             },
         }
 
+        # Clone params for extra buy / ante modes
+        self.game_config.opt_params["ante"] = {
+            "conditions": {
+                "wincap": ConstructConditions(
+                    rtp=0.001, av_win=wincaps["ante"], search_conditions=wincaps["ante"]
+                ).return_dict(),
+                "0": ConstructConditions(rtp=0, av_win=0, search_conditions=0).return_dict(),
+                "freegame": ConstructConditions(
+                    rtp=0.36, hr=100, search_conditions={"symbol": "scatter"}
+                ).return_dict(),
+                "basegame": ConstructConditions(hr=3.5, rtp=0.599).return_dict(),
+            },
+            "scaling": self.game_config.opt_params["base"]["scaling"],
+            "parameters": self.game_config.opt_params["base"]["parameters"],
+            "distribution_bias": self.game_config.opt_params["base"]["distribution_bias"],
+        }
+        for mode in ("bonus_3", "bonus_4"):
+            self.game_config.opt_params[mode] = {
+                "conditions": {
+                    "wincap": ConstructConditions(
+                        rtp=0.001, av_win=wincaps[mode], search_conditions=wincaps[mode]
+                    ).return_dict(),
+                    "freegame": ConstructConditions(rtp=0.959, hr="x").return_dict(),
+                },
+                "scaling": self.game_config.opt_params["bonus"]["scaling"],
+                "parameters": self.game_config.opt_params["bonus"]["parameters"],
+                "distribution_bias": self.game_config.opt_params["bonus"]["distribution_bias"],
+            }
+
         verify_optimization_input(self.game_config, self.game_config.opt_params)

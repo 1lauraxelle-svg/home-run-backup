@@ -17,10 +17,23 @@
 	.ui-popup-standard-content-wrap {
 		display: flex;
 		flex-direction: column;
-		justify-content: center;
-		align-items: center;
+		justify-content: flex-start;
+		align-items: stretch;
 		z-index: var(--zIndex);
+		position: relative;
+		width: min(960px, 94vw);
 		max-width: var(--maxWidth);
-		gap: 1rem;
+		max-height: min(88vh, 920px);
+		min-height: 0;
+		gap: 0.75rem;
+		padding: 0.75rem 0.25rem 1rem;
+		box-sizing: border-box;
+		overflow: hidden;
+	}
+
+	.ui-popup-standard-content-wrap :global(.ui-modal-title-wrap) {
+		flex: 0 0 auto;
+		text-align: center;
+		padding: 0 2.5rem;
 	}
 </style>

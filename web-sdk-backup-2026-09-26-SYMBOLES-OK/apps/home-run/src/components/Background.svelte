@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Rectangle, SpineProvider, SpineTrack } from 'pixi-svelte';
+	import { Rectangle, SpineProvider, SpineTrack, SpineBone } from 'pixi-svelte';
 	import { FadeContainer } from 'components-pixi';
 	import { SECOND } from 'constants-shared/time';
 
@@ -28,9 +28,12 @@
 <FadeContainer show={showFeatureBackground} duration={SECOND} zIndex={-1}>
 	<SpineProvider key="foregroundFeatureAnimation" {...backgroundProps}>
 		<SpineTrack trackIndex={0} animationName={'idle'} loop />
+		<!-- Hide hanging lanterns over FREE SPINS / HOME RUN banners -->
+		<SpineBone boneName="bonus_lanterns" scaleX={0} scaleY={0} />
 	</SpineProvider>
 	<SpineProvider key="foregroundFeatureAnimation" {...backgroundProps}>
 		<SpineTrack trackIndex={0} animationName={'dust'} loop />
+		<SpineBone boneName="bonus_lanterns" scaleX={0} scaleY={0} />
 	</SpineProvider>
 </FadeContainer>
 

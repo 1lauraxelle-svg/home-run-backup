@@ -34,7 +34,8 @@
 	const batterH = $derived(board.height * 1.15);
 	const batterW = $derived(batterH * 0.65);
 	const baseX = $derived(board.x + board.width * 0.5 + batterW * 0.35 + SYMBOL_SIZE * 0.15);
-	const baseY = $derived(board.y + board.height * 0.30);
+	// Feet on the white chalk marks near home plate
+	const baseY = $derived(board.y + board.height * 0.55);
 
 	const spriteKey = $derived(pose === 'swing' ? 'batterSwing' : 'batterIdle');
 
@@ -140,7 +141,7 @@
 <Container x={baseX} y={baseY} zIndex={2} scale={batterScale} rotation={batterRot}>
 	<Sprite
 		key={spriteKey}
-		anchor={{ x: 0.5, y: 0.55 }}
+		anchor={{ x: 0.5, y: 0.92 }}
 		width={batterW}
 		height={batterH}
 	/>
@@ -149,7 +150,7 @@
 			key="batterBall"
 			anchor={0.5}
 			x={ballX}
-			y={ballY}
+			y={ballY - batterH * 0.35}
 			width={SYMBOL_SIZE * 0.45 * ballScale}
 			height={SYMBOL_SIZE * 0.45 * ballScale}
 		/>

@@ -1,4 +1,5 @@
 import books from './books.json';
+import maxWinBookRaw from './maxwin_book.json';
 
 type OfflineBook = {
 	id: number;
@@ -8,6 +9,15 @@ type OfflineBook = {
 };
 
 const pools = books as { base: OfflineBook[]; bonus: OfflineBook[] };
+
+/**
+ * Real math max-win book (id 121): base → free spins → wincap 25000x.
+ * Math stores payoutMultiplier in hundredths (2500000 = 25000x).
+ */
+const MAX_WIN_BOOK: OfflineBook = {
+	...(maxWinBookRaw as OfflineBook),
+	payoutMultiplier: (maxWinBookRaw as OfflineBook).payoutMultiplier / 100,
+};
 
 /**
  * Showcase: baseball multiplier wilds x2 / x4 / x5 / x7 / x10 on the 5×3.
@@ -37,14 +47,20 @@ const SHOWCASE_BOOK: OfflineBook = {
 	],
 };
 
+/** Force next base spin(s) to the real max-win book (for QA). */
+const FORCE_MAX_WIN = false;
 /** Set false to restore random offline books. */
-const FORCE_SHOWCASE = true;
+const FORCE_SHOWCASE = false;
 
 export const pickBook = (mode: string) => {
-	if (FORCE_SHOWCASE && !mode?.toLowerCase().includes('bonus')) {
+	const isBonus = mode?.toLowerCase().includes('bonus');
+	if (FORCE_MAX_WIN && !isBonus) {
+		return MAX_WIN_BOOK;
+	}
+	if (FORCE_SHOWCASE && !isBonus) {
 		return SHOWCASE_BOOK;
 	}
-	const key = mode?.toLowerCase().includes('bonus') ? 'bonus' : 'base';
+	const key = isBonus ? 'bonus' : 'base';
 	const pool = pools[key];
 	const book = pool[Math.floor(Math.random() * pool.length)];
 	return book;

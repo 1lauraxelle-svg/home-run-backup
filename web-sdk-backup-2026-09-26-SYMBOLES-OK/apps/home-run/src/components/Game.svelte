@@ -5,7 +5,7 @@
 	import { EnableHotkey } from 'components-shared';
 	import { MainContainer } from 'components-layout';
 	import { App } from 'pixi-svelte';
-	import { stateModal } from 'state-shared';
+	import { stateModal, stateBet } from 'state-shared';
 
 	import { UI, UiGameName } from 'components-ui-pixi';
 	import { GameVersion, Modals } from 'components-ui-html';
@@ -48,14 +48,13 @@
 	<Background />
 
 	{#if context.stateLayout.showLoadingScreen}
-		<LoadingScreen onloaded={() => (context.stateLayout.showLoadingScreen = false)} />
+		<LoadingScreen
+			onloaded={() => {
+				stateBet.isSpaceHold = false;
+				context.stateLayout.showLoadingScreen = false;
+			}}
+		/>
 	{:else}
-		<ResumeBet />
-		<!--
-			The reason why <Sound /> is rendered after clicking the loading screen:
-			"Autoplay with sound is allowed if: The user has interacted with the domain (click, tap, etc.)."
-			Ref: https://developer.chrome.com/blog/autoplay
-		-->
 		<Sound />
 
 		<MainContainer>
@@ -84,11 +83,13 @@
 		{/if}
 		<FreeSpinOutro />
 		<Transition />
+		<!-- After Win/Board so resume handlers exist before resumeBet fires -->
+		<ResumeBet />
 	{/if}
 </App>
 
 <Modals>
 	{#snippet version()}
-		<GameVersion version="0.0.0" studio="Strike ZONE Gaming" />
+		<GameVersion version="0.0.1" studio="Strike ZONE Gaming" />
 	{/snippet}
 </Modals>

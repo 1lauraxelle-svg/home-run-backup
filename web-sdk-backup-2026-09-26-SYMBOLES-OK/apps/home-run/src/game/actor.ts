@@ -27,7 +27,10 @@ const primaryMachines = createPrimaryMachines<Bet>({
 			paddingBoard: config.paddingReels[stateGame.gameType],
 		});
 	},
-	onNewGameError: () => stateGameDerived.enhancedBoard.settle(),
+	onNewGameError: () => {
+		stateBet.isSpaceHold = false;
+		stateGameDerived.enhancedBoard.settle();
+	},
 	onPlayGame: async (bet) => await playBet(bet),
 	checkIsBonusGame: (bet) => checkIsMultipleRevealEvents({ bookEvents: bet.state }),
 });

@@ -7,8 +7,9 @@ body {
 }
 
 :root {
-	--scrollbar-size: 6px;
-	--grey: #cccccc;
+	--scrollbar-size: 10px;
+	--grey: #c8c8c8;
+	--scrollbar-track: rgba(255, 255, 255, 0.08);
 }
 
 .scrollY {
@@ -19,7 +20,8 @@ body {
 	-webkit-overflow-scrolling: touch;
 	-webkit-overflow-scroll: touch;
 
-	scrollbar-width: thin;
+	scrollbar-width: auto;
+	scrollbar-gutter: stable;
 }
 
 .scrollX {
@@ -29,7 +31,7 @@ body {
 	transform: translate3d(0, 0, 0);
 	/* https://discussions.apple.com/thread/7677586 🤷‍♂️ */
 	-moz-transform: none !important;
-	scrollbar-width: thin;
+	scrollbar-width: auto;
 }
 
 .hide-scrollbar {
@@ -42,7 +44,7 @@ body {
 
 .scrollX,
 .scrollY {
-	scrollbar-color: var(--grey) transparent;
+	scrollbar-color: var(--grey) var(--scrollbar-track);
 }
 
 .scrollX::-webkit-scrollbar {
@@ -53,10 +55,24 @@ body {
 	width: var(--scrollbar-size);
 }
 
+.scrollY::-webkit-scrollbar-track,
+.scrollX::-webkit-scrollbar-track {
+	background: var(--scrollbar-track);
+	border-radius: 10px;
+}
+
 .scrollY::-webkit-scrollbar-thumb,
 .scrollX::-webkit-scrollbar-thumb {
 	background: var(--grey);
 	border-radius: 10px;
+	border: 2px solid transparent;
+	background-clip: content-box;
+}
+
+.scrollY::-webkit-scrollbar-thumb:hover,
+.scrollX::-webkit-scrollbar-thumb:hover {
+	background: #ffffff;
+	background-clip: content-box;
 }
 
 .scroll-light {

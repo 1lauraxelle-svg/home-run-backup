@@ -14,8 +14,29 @@ export default {
 			rtp: 0.96,
 			max_win: 25000.0,
 		},
-		bonus: {
+		ante: {
+			cost: 1.25,
+			feature: true,
+			buyBonus: false,
+			rtp: 0.96,
+			max_win: 25000.0,
+		},
+		bonus_3: {
 			cost: 100.0,
+			feature: false,
+			buyBonus: true,
+			rtp: 0.96,
+			max_win: 25000.0,
+		},
+		bonus_4: {
+			cost: 160.0,
+			feature: false,
+			buyBonus: true,
+			rtp: 0.96,
+			max_win: 25000.0,
+		},
+		bonus: {
+			cost: 200.0,
 			feature: false,
 			buyBonus: true,
 			rtp: 0.96,

@@ -28,10 +28,12 @@
 			context.stateGameDerived.boardLayout().x -
 			context.stateGameDerived.boardLayout().width * 0.5 -
 			panelSizes.width -
-			SYMBOL_SIZE * 0.7,
+			SYMBOL_SIZE * 0.85,
+		// Clear of catcher, but below the clock so the time stays visible
 		y:
 			context.stateGameDerived.boardLayout().y -
-			context.stateGameDerived.boardLayout().height * 0.5,
+			context.stateGameDerived.boardLayout().height * 0.5 -
+			panelSizes.height * 0.85,
 	});
 
 	const fontSize = SYMBOL_SIZE * 0.275;

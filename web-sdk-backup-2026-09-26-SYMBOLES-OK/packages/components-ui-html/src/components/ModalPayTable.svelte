@@ -3,10 +3,12 @@
 
 	import { Popup } from 'components-shared';
 	import { zIndex } from 'constants-shared/zIndex';
-	import { stateModal } from 'state-shared';
+	import { stateModal, stateMeta } from 'state-shared';
 
 	import BaseContent from './BaseContent.svelte';
 	import BaseScrollable from './BaseScrollable.svelte';
+	import BaseTitle from './BaseTitle.svelte';
+	import GameRuleSections from './GameRuleSections.svelte';
 
 	type Props = {
 		children: Snippet;
@@ -18,8 +20,9 @@
 {#if stateModal.modal?.name === 'payTable'}
 	<Popup zIndex={zIndex.modal} onclose={() => (stateModal.modal = null)}>
 		<BaseContent maxWidth="100%">
+			<BaseTitle>PAYTABLE</BaseTitle>
 			<BaseScrollable type="column">
-				<span>ADD YOUR PAY TABLE</span>
+				<GameRuleSections sections={stateMeta.gameRuleMeta.payTable} />
 				{@render props.children()}
 			</BaseScrollable>
 		</BaseContent>

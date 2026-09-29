@@ -7,6 +7,9 @@
 	import { setContext } from '../game/context';
 
 	import messagesMap from '../i18n/messagesMap';
+	import { stateMeta, stateBet } from 'state-shared';
+	import { HOME_RUN_BET_MODE_META } from '../game/betModeMeta';
+	import { HOME_RUN_GAME_RULE_META } from '../game/gameRuleMeta';
 
 	type Props = { children: Snippet };
 
@@ -18,6 +21,13 @@
 
 	const loaderUrlStakeEngine = new URL('../../stake-engine-loader.gif', import.meta.url).href;
 	const loaderUrl = new URL('../../loader.gif', import.meta.url).href;
+
+	// Home Run modes + paytable / info content.
+	if (browser) {
+		stateMeta.betModeMeta = HOME_RUN_BET_MODE_META;
+		stateMeta.gameRuleMeta = HOME_RUN_GAME_RULE_META;
+		stateBet.activeBetModeKey = 'base';
+	}
 
 	// DEV only: inject mock session so local `vite dev` works without Studio params.
 	// Never do this in production — Studio provides sessionID/rgs_url; injecting

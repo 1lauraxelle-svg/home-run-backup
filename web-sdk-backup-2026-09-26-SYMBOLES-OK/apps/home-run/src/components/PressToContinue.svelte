@@ -13,10 +13,10 @@
 	const props: Props = $props();
 	const context = getContext();
 
-	// Sprite source is 711×351 — keep native aspect (was squashed at 800×134).
-	const PRESS_W = 420;
+	// Sprite source is 711×351 — keep native aspect; sized to clear feature cards above.
+	const PRESS_W = 340;
 	const PRESS_H = Math.round((PRESS_W * 351) / 711);
-	const BOTTOM_MARGIN = 56;
+	const BOTTOM_MARGIN = 28;
 </script>
 
 <MainContainer alignVertical="bottom">

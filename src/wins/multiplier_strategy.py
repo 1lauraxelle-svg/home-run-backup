@@ -17,6 +17,9 @@ def apply_mult(
     strat = {
         "global": apply_global_mult(win_amount, global_multiplier),
         "symbol": apply_added_symbol_mult(board, win_amount, positions, multiplier_key=multiplier_key),
+        "symbol_product": apply_product_symbol_mult(
+            board, win_amount, positions, multiplier_key=multiplier_key
+        ),
         "combined": apply_combined_mult(
             board, win_amount, global_multiplier, positions, multiplier_key=multiplier_key
         ),
@@ -39,6 +42,21 @@ def apply_added_symbol_mult(board: Board, win_amount: float, positions: List[Dic
         ):
             symbol_multiplier += board[pos["reel"]][pos["row"]].get_attribute(multiplier_key)
     return (round(win_amount * max(symbol_multiplier, 1), 2), max(symbol_multiplier, 1))
+
+
+def apply_product_symbol_mult(
+    board: Board, win_amount: float, positions: List[Dict], multiplier_key: str
+) -> tuple:
+    """Multiply wild multipliers on the same winning line (x2 × x3 = x6)."""
+    symbol_multiplier = 1
+    found = False
+    for pos in positions:
+        sym = board[pos["reel"]][pos["row"]]
+        if sym.check_attribute(multiplier_key) and sym.get_attribute(multiplier_key) > 1:
+            symbol_multiplier *= int(sym.get_attribute(multiplier_key))
+            found = True
+    applied = symbol_multiplier if found else 1
+    return (round(win_amount * applied, 2), applied)
 
 
 def apply_combined_mult(

@@ -110,7 +110,7 @@ class GameConfig(Config):
             "W": {"multiplier": {2: 100, 3: 50, 4: 40, 5: 30, 10: 20, 20: 10, 50: 5, 100: 2}}
         }
 
-        # Multis des wilds : 1x en base, 2x–100x en bonus (cap 25000x).
+        # Multis des wilds : balles ×2–×100 (base un peu plus doux) — produit sur la ligne.
         freegame_condition = {
             "reel_weights": {
                 self.basegame_type: {"BR0": 1},
@@ -118,7 +118,14 @@ class GameConfig(Config):
             },
             "scatter_triggers": {3: 50, 4: 20, 5: 5},
             "mult_values": {
-                self.basegame_type: {1: 1},
+                self.basegame_type: {
+                    1: 40,
+                    2: 80,
+                    3: 40,
+                    4: 20,
+                    5: 10,
+                    10: 5,
+                },
                 self.freegame_type: {
                     2: 50,
                     3: 70,
@@ -134,9 +141,27 @@ class GameConfig(Config):
             "force_freegame": True,
         }
 
+        freegame_3 = {**freegame_condition, "scatter_triggers": {3: 1}}
+        freegame_4 = {**freegame_condition, "scatter_triggers": {4: 1}}
+
+        # Double Chance: ~2× freegame quota vs base.
+        ante_freegame_condition = {
+            **freegame_condition,
+            "scatter_triggers": {3: 60, 4: 25, 5: 8},
+        }
+
         basegame_condition = {
             "reel_weights": {self.basegame_type: {"BR0": 1}},
-            "mult_values": {self.basegame_type: {1: 1}},
+            "mult_values": {
+                self.basegame_type: {
+                    1: 40,
+                    2: 80,
+                    3: 40,
+                    4: 20,
+                    5: 10,
+                    10: 5,
+                },
+            },
             "force_wincap": False,
             "force_freegame": False,
         }
@@ -147,7 +172,7 @@ class GameConfig(Config):
                 self.freegame_type: {"FR0": 1, "WCAP": 5},
             },
             "mult_values": {
-                self.basegame_type: {1: 1},
+                self.basegame_type: {2: 20, 5: 30, 10: 40, 20: 30, 50: 20, 100: 10},
                 self.freegame_type: {10: 10, 20: 20, 50: 40, 100: 80},
             },
             "scatter_triggers": {4: 1, 5: 2},
@@ -157,12 +182,20 @@ class GameConfig(Config):
 
         zerowin_condition = {
             "reel_weights": {self.basegame_type: {"BR0": 1}},
-            "mult_values": {self.basegame_type: {1: 1}},
+            "mult_values": {
+                self.basegame_type: {
+                    1: 40,
+                    2: 80,
+                    3: 40,
+                    4: 20,
+                    5: 10,
+                },
+            },
             "force_wincap": False,
             "force_freegame": False,
         }
 
-        mode_maxwins = {"base": 25000, "bonus": 25000}
+        mode_maxwins = {"base": 25000, "ante": 25000, "bonus": 25000, "bonus_3": 25000, "bonus_4": 25000}
         self.bet_modes = [
             BetMode(
                 name="base",
@@ -185,8 +218,28 @@ class GameConfig(Config):
                 ],
             ),
             BetMode(
+                name="ante",
+                cost=1.25,
+                rtp=self.rtp,
+                max_win=mode_maxwins["ante"],
+                auto_close_disabled=False,
+                is_feature=True,
+                is_buybonus=False,
+                distributions=[
+                    Distribution(
+                        criteria="wincap",
+                        quota=0.001,
+                        win_criteria=mode_maxwins["ante"],
+                        conditions=wincap_condition,
+                    ),
+                    Distribution(criteria="freegame", quota=0.2, conditions=ante_freegame_condition),
+                    Distribution(criteria="0", quota=0.35, win_criteria=0.0, conditions=zerowin_condition),
+                    Distribution(criteria="basegame", quota=0.449, conditions=basegame_condition),
+                ],
+            ),
+            BetMode(
                 name="bonus",
-                cost=100.0,
+                cost=200.0,
                 rtp=self.rtp,
                 max_win=mode_maxwins["bonus"],
                 auto_close_disabled=False,
@@ -200,6 +253,42 @@ class GameConfig(Config):
                         conditions=wincap_condition,
                     ),
                     Distribution(criteria="freegame", quota=0.999, conditions=freegame_condition),
+                ],
+            ),
+            BetMode(
+                name="bonus_3",
+                cost=100.0,
+                rtp=self.rtp,
+                max_win=mode_maxwins["bonus_3"],
+                auto_close_disabled=False,
+                is_feature=False,
+                is_buybonus=True,
+                distributions=[
+                    Distribution(
+                        criteria="wincap",
+                        quota=0.001,
+                        win_criteria=mode_maxwins["bonus_3"],
+                        conditions=wincap_condition,
+                    ),
+                    Distribution(criteria="freegame", quota=0.999, conditions=freegame_3),
+                ],
+            ),
+            BetMode(
+                name="bonus_4",
+                cost=160.0,
+                rtp=self.rtp,
+                max_win=mode_maxwins["bonus_4"],
+                auto_close_disabled=False,
+                is_feature=False,
+                is_buybonus=True,
+                distributions=[
+                    Distribution(
+                        criteria="wincap",
+                        quota=0.001,
+                        win_criteria=mode_maxwins["bonus_4"],
+                        conditions=wincap_condition,
+                    ),
+                    Distribution(criteria="freegame", quota=0.999, conditions=freegame_4),
                 ],
             ),
         ]

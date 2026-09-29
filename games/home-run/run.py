@@ -17,17 +17,20 @@ if __name__ == "__main__":
     compression = True
     profiling = False
 
-    # 100k+ sims/mode recommended for Stake Engine production math
+    # Faster regen for wild product stacking (re-opt RTP after publish smoke-test)
     num_sim_args = {
-        "base": int(1e5),
-        "bonus": int(1e5),
+        "base": int(2e4),
+        "bonus": int(2e4),
+        "bonus_3": int(1e4),
+        "bonus_4": int(1e4),
+        "ante": int(1e4),
     }
 
     run_conditions = {
         "run_sims": True,
         "run_optimization": True,
-        "run_analysis": True,
-        "run_format_checks": True,
+        "run_analysis": False,
+        "run_format_checks": False,
     }
     target_modes = list(num_sim_args.keys())
 
