@@ -100,24 +100,29 @@
 		raf = requestAnimationFrame(tick);
 	};
 
-	const runStaticComplete = () => {
-		queueMicrotask(() => finish());
-	};
-
 	$effect(() => {
+		// Only react to animation state — do NOT track symbolInfo (new object refs
+		// + oncomplete re-renders caused effect_update_depth_exceeded loops).
 		const state = props.state ?? 'static';
-		props.symbolInfo;
 		cancelled = false;
-		completed = false;
 		cancelAnimationFrame(raf);
 		scale = 1;
 		rotation = 0;
 		alpha = 1;
 
-		if (state === 'spin') runSpin();
-		else if (state === 'land') runLand();
-		else if (state === 'win') runWin();
-		else runStaticComplete();
+		if (state === 'spin') {
+			completed = false;
+			runSpin();
+		} else if (state === 'land') {
+			completed = false;
+			runLand();
+		} else if (state === 'win') {
+			completed = false;
+			runWin();
+		} else {
+			// static: settle once; finish() is idempotent via `completed`
+			queueMicrotask(() => finish());
+		}
 
 		return () => {
 			cancelled = true;

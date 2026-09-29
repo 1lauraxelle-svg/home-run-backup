@@ -6,8 +6,13 @@ import { requestBet, requestEndRound } from 'rgs-requests';
 
 import type { BaseBet } from './types';
 
+const isActiveRoundError = (error: unknown) => {
+	const text = JSON.stringify(error ?? {}).toLowerCase();
+	return text.includes('active round') || text.includes('already active');
+};
+
 const handleRequestBet = async ({ onError }: { onError: () => void }) => {
-	try {
+	const playOnce = async () => {
 		const data = await requestBet({
 			rgsUrl: stateUrlDerived.rgsUrl(),
 			sessionID: stateUrlDerived.sessionID(),
@@ -22,15 +27,33 @@ const handleRequestBet = async ({ onError }: { onError: () => void }) => {
 
 		if (data?.round?.state && data?.round?.state?.length > 0) {
 			stateBet.wageredBetAmount = stateBet.betAmount;
-
 			return data;
-		} else {
-			throw {
-				error: 'Empty state in data.round',
-				message: JSON.stringify({ data }),
-			};
 		}
+
+		throw {
+			error: 'Empty state in data.round',
+			message: JSON.stringify({ data }),
+		};
+	};
+
+	try {
+		return await playOnce();
 	} catch (error) {
+		// Orphaned RGS round (refresh mid-bonus) — close it and retry once.
+		if (isActiveRoundError(error)) {
+			console.warn('Active round detected — ending round and retrying bet once');
+			await handleRequestEndRound();
+			try {
+				return await playOnce();
+			} catch (retryError) {
+				onError();
+				stateBet.autoSpinsCounter = 0;
+				stateModal.modal = { name: 'error', error: retryError };
+				console.error(retryError);
+				throw retryError;
+			}
+		}
+
 		onError();
 		stateBet.autoSpinsCounter = 0;
 		stateModal.modal = { name: 'error', error };
